@@ -52,7 +52,7 @@ def check(buster):
     try:
         req = requests.get(f'{TARGET}/{buster}', headers=headers, timeout=25)
         if req.ok:
-            print(f'{Fore.GREEN} {checked} Good request: /{buster}')
+            print(f'{Fore.GREEN} {checked} Good request: /{buster} Status code: {req.status_code}')
             f.write(f"Found /{buster} code:{req.status_code}")
             f.close()
 
