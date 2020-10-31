@@ -1,6 +1,6 @@
 # © BoganBuster- Discord.py- Made by Yuval Simon. For bogan.cool
 
-import random, time, sys, random, socks
+import random, time, sys, os
 
 import requests
 
@@ -8,29 +8,57 @@ from colorama import Fore
 
 import multiprocessing
 
-thr = int(input(f"{Fore.BLUE}[CONSOLE] Please enter threading number (5-100): "))
+thr = os.cpu_count()
 TARGET = input(f"{Fore.BLUE}[CONSOLE] Please enter full url site target: ")
 FILE = input(f"{Fore.BLUE}[CONSOLE] Please enter wordlist file without the extension: ")
 bad_requests = input(f"{Fore.BLUE}[CONSOLE] Shoud I input bad requests too? (y/n): ")
-use_proxy = input(f"{Fore.BLUE}[CONSOLE] Should I Use proxies (y/n): ")
+use_proxy = input(f"{Fore.BLUE}[CONSOLE] Should I use (http) proxies (y/n): ")
 
 if use_proxy == 'y':
-    proxy_type = input(f"{Fore.BLUE}[CONSOLE] Please enter proxy type: ")
-    proxy_file = input(f"{Fore.BLUE}[CONSOLE] Please enter the proxy filename without the extension: ")
-    timeout = int(input(f"{Fore.BLUE}[CONSOLE] Please enter proxy timeout (1-15): "))
+    get_proxies = input(f'{Fore.BLUE}[CONSOLE] Should I get the proxies or you already have http proxy list? (get/n):')
+
+    if get_proxies == 'get':
+        proxylist = open('http_proxies.txt', 'a+')
+        try:
+            r1 = requests.get('https://api.proxyscrape.com?request=getproxies&proxytype=http')
+            proxylist.write(r1.text)
+        except:
+            pass
+        try:
+            r2 = requests.get("https://www.proxy-list.download/api/v1/get?type=https")
+            proxylist.write(r2.text)
+        except:
+            pass
+        try:
+            r3 = requests.get("https://www.proxyscan.io/download?type=http")
+            proxylist.write(r3.text)
+        except:
+            pass
+        try:
+            r4 = requests.get("https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt")
+            proxylist.write(r4.text)
+        except:
+            pass
+        proxylist.close()
+        proxy_file = 'http_proxies'
+
+    else:
+        proxy_file = input(f"{Fore.BLUE}[CONSOLE] Please enter the proxy filename without the extension: ")
+    timeout = int(input(f"{Fore.BLUE}[CONSOLE] Please enter proxy timeout (10-50): "))
+    max_retries = int(input(f"{Fore.BLUE}[CONSOLE] Please enter max retries (1-6) "))
 else:
     pass
 
-f = open('good.txt', 'r+')
-f_p = open('good_proxies.txt', 'r+')
+f = open('good.txt', 'a+')
+f_p = open('good_proxies.txt', 'a+')
+read = f_p.readlines()
 
 checked = 0
 proxy_checked = 0
-proxy_good = 0
 
 
 def proxy_checker(proxy):
-    global proxy_checked, timeout, TARGET, use_proxy, f_p, proxy_type
+    global proxy_checked, timeout, TARGET, f_p
     headers = {'User-Agent': ''}
     user_agent_list = [
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
@@ -63,10 +91,10 @@ def proxy_checker(proxy):
     headers['User-Agent'] = random.choice(user_agent_list)
 
     try:
-        req = requests.get(f'{TARGET}', headers=headers, proxies={'https': f'{proxy_type}://{proxy}', 'http': f'{proxy_type}://{proxy}'}, timeout=timeout)
+        req = requests.get(f'{TARGET}', headers=headers, proxies={'https': f'https://{proxy}', 'http': f'http://{proxy}'}, timeout=timeout)
         if req.ok:
             f_p.write(f"{proxy}")
-            print(f'{Fore.GREEN}Found good proxy: {proxy}')
+            print(f'{Fore.GREEN}{proxy_checked}: Found good proxy- {proxy}')
             f_p.close()
 
         else:
@@ -74,7 +102,7 @@ def proxy_checker(proxy):
     except:
         pass
 
-def checker(buster, proxy, max_trys = 3):
+def checker(buster, proxy, max_trys = max_retries):
     global timeout, checked, f, TARGET, use_proxy, f_p
     headers = {'User-Agent': ''}
     user_agent_list = [
@@ -109,22 +137,22 @@ def checker(buster, proxy, max_trys = 3):
 
     if use_proxy == 'y':
         try:
-            req = requests.get(f'{TARGET}/{buster}', headers=headers, proxies={'https': f'{proxy_type}://{proxy}', 'http': f'{proxy_type}://{proxy}'}, timeout=timeout)
+            req = requests.get(f'{TARGET}/{buster}', headers=headers, proxies={'https': f'https://{proxy}', 'http': f'https://{proxy}'}, timeout=timeout)
             if req.ok:
-                print(f'{Fore.GREEN} {checked} Good request: /{buster} Status code: {req.status_code}')
-                f.write(f"Found /{buster} code:{req.status_code}")
+                print(f'{Fore.GREEN}{checked}: Good request {req.status_code}- /{buster} Proxy- ({proxy})')
+                f.write(f'\n{checked}: Good request {req.status_code}- /{buster}')
                 f.close()
 
             else:
                 if bad_requests == 'y':
-                    print(f'{Fore.RED}{checked} Bad request {req.status_code}: /{buster}')
+                    print(f'{Fore.RED}{checked} Bad request {req.status_code}: /{buster} Proxy- ({proxy})')
                     pass
 
                 elif  bad_requests == 'n':
                     pass
         except:
             if bad_requests == 'y':
-                print(f'{Fore.RED}{checked} You probably have been blocked by the website! ')
+                print(f'{Fore.RED}{checked} The proxy might have been blocked by the website! Proxy- ({proxy})')
                 pass
             elif bad_requests == 'n':
                 pass
@@ -132,9 +160,9 @@ def checker(buster, proxy, max_trys = 3):
 
     elif use_proxy == 'n':
         try:
-            req = requests.get(f'{TARGET}/{buster}', headers=headers, timeout=15)
+            req = requests.get(f'{TARGET}/{buster}', headers=headers, timeout=timeout)
             if req.ok:
-                print(f'{Fore.GREEN} {checked} Good request: /{buster} Status code: {req.status_code}')
+                print(f'{Fore.GREEN}{checked}: Good request {req.status_code}- /{buster}')
                 f.write(f"Found /{buster} code:{req.status_code}")
                 f.close()
 
@@ -147,7 +175,7 @@ def checker(buster, proxy, max_trys = 3):
                     pass
         except:
             if bad_requests == 'y':
-                print(f'{Fore.RED}{checked} You probably have been blocked by the website! ')
+                print(f'{Fore.RED}{checked} You might have been blocked by the website! ')
                 pass
             elif bad_requests == 'n':
                 pass
@@ -155,7 +183,7 @@ def checker(buster, proxy, max_trys = 3):
 
 
 def start_proxy_checker():
-    global proxy_done, proxy_checked
+    global proxy_checked
     try:
         with open(f"{proxy_file}.txt", 'r+', encoding="utf-8", errors='ignore') as f:
             proxs = f.readlines()
@@ -165,8 +193,9 @@ def start_proxy_checker():
                 if proxy_checked < p_LEN:
                     for proxie in proxs:
                         p = multiprocessing.Process(target=proxy_checker, args=[proxie])
-                        p.start()
                         proxy_checked += 1
+                        p.daemon = True
+                        p.start()
                         p_processes.append(p)
 
                     for process in p_processes:
@@ -175,19 +204,23 @@ def start_proxy_checker():
                 elif proxy_checked > p_LEN:
                     time.sleep(0.03)
                     for process in p_processes: 
-                        process.stop
+                        process.shutdown()
+                    f_p.close()
 
     except FileNotFoundError:
         print(f'{Fore.RED}[CONSOLE] Proxylist file not found.')
         sys.exit()
 
+    except KeyboardInterrupt:
+        print("Caught KeyboardInterrupt, terminating workers")
+        p.terminate()
+        p.join()
+
+
 def start_checker():
     global checked, f_p
-    try:
-        random_prox = f_p.readlines()
-        broxie = random.choice(random_prox)
-    except:
-        pass
+    Fl = open('good_proxies.txt', 'r')
+    read = Fl.readlines()
     try:
         with open(f"{FILE}.txt", 'r+', encoding="utf-8", errors='ignore') as f:
             busts = f.readlines()
@@ -196,9 +229,10 @@ def start_checker():
             for _ in range(thr):
                 if checked < LEN:
                     for buster in busts:
-                        p = multiprocessing.Process(target=checker, args=[buster, broxie])
-                        p.start()
+                        p = multiprocessing.Process(target=checker, args=[buster, random.choice(read)])
                         checked += 1
+                        p.daemon = True
+                        p.start()
                         processes.append(p)
 
                     for process in processes:
@@ -207,14 +241,37 @@ def start_checker():
                 elif checked > LEN:
                     time.sleep(0.03)
                     for process in processes: 
-                        process.stop
+                        process.shutdown()
                     f.close()
 
     except FileNotFoundError:
         print(f'{Fore.RED}[CONSOLE] Wordlist not found.')
         sys.exit()
+    
+    except KeyboardInterrupt:
+        print("Caught KeyboardInterrupt, terminating workers")
+        p.terminate()
 
+    except IndexError:
+        print(f"{Fore.RED}[CONSOLE] There are no valid proxies! Please try again.")
+        sys.exit()
+
+
+Fg = open('good_proxies.txt', 'r')
 
 if __name__ == '__main__':
-    start_proxy_checker()
-    start_checker()
+    if use_proxy == 'y':
+        start_proxy_checker()
+        time.sleep(0.03)
+        print(f'{Fore.YELLOW}[CONSOLE] Found {len(Fg.readlines())} good proxies from {proxy_checked} proxies.')
+        op = input(f'{Fore.BLUE}[CONSOLE] Should I start checking dirs? (y/n): ')
+        Fg.close()
+
+        if op == 'y':
+            start_checker()
+        else:
+            pass
+            f_p.close()
+            sys.exit()
+    else:
+        start_checker()
