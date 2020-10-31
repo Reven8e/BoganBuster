@@ -18,6 +18,11 @@ if use_proxy == 'y':
     get_proxies = input(f'{Fore.BLUE}[CONSOLE] Should I get the proxies or you already have http proxy list? (get/n):')
 
     if get_proxies == 'get':
+        try:
+            os.remove("http_proxies.txt")
+        except:
+            pass
+        
         proxylist = open('http_proxies.txt', 'a+')
         try:
             r1 = requests.get('https://api.proxyscrape.com?request=getproxies&proxytype=http')
