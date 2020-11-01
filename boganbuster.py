@@ -1,4 +1,4 @@
-# © BoganBuster- Made by Yuval Simon. For bogan.cool
+# © BoganBuster- Discord.py- Made by Yuval Simon. For bogan.cool
 
 import random, time, sys, os
 
@@ -56,7 +56,6 @@ else:
 
 f = open('good.txt', 'a+')
 f_p = open('good_proxies.txt', 'a+')
-read = f_p.readlines()
 
 checked = 0
 proxy_checked = 0
