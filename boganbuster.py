@@ -1,4 +1,4 @@
-# © BoganBuster- Discord.py- Made by Yuval Simon. For bogan.cool
+# © BoganBuster- Discord.py- Made by Yuval Simon. For www.bogan.cool
 
 import random, time, sys, os
 
